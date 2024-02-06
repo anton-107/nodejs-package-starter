@@ -1,0 +1,132 @@
+#!/bin/bash
+
+#
+# Functions
+#
+
+# Function to format text as bold
+bold() {
+    echo -e "\033[1m$1\033[0m"
+}
+
+#
+# Script
+#
+
+# Get the package name from the command-line argument or prompt the user
+if [ -z "$1" ]; then
+    read -p "Enter your package name: " package_name
+else
+    package_name=$1
+fi
+
+# Check if the folder already exists
+if [ -d "$package_name" ]; then
+    echo "Error: The folder '$package_name' already exists. Please choose a different package name or delete that folder before running this script."
+    exit 1
+fi
+
+# Create a folder and set up an empty git repository
+echo "$(bold "Step 1"): Creating a new folder '$package_name'"
+mkdir $package_name
+cd $package_name
+
+echo "$(bold "Step 2"): Initializing git repository with an empty initial commit"
+git init
+git commit -m 'initial commit' --allow-empty
+
+# Set up npm
+echo "$(bold "Step 3"): Initializing npm"
+npm init -y
+
+echo "$(bold "Step 4"): Setting up GitHub actions"
+mkdir -p .github/workflows
+touch .github/workflows/ci.yml
+echo '
+name: CI build
+on: [push]
+jobs:
+  Build-And-Test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [16]
+    name: Node ${{ matrix.node }} sample
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm ci
+      - run: npm test
+      - run: npm run test:coverage
+      - run: npm run lint
+      - run: npm run check-format
+      - run: npm run build
+' > .github/workflows/ci.yml
+
+echo "$(bold "Step 5"): Writing eslint config"
+echo '
+module.exports = {
+  root: true,
+  parser: "@typescript-eslint/parser",
+  plugins: [
+    "@typescript-eslint",
+    "simple-import-sort",
+    "eslint-plugin-eslint-comments",
+  ],
+  extends: ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
+  ignorePatterns: ["/dist/**/*"],
+  rules: {
+    "simple-import-sort/imports": "error",
+    "simple-import-sort/exports": "error",
+    "no-console": "error",
+    "no-duplicate-imports": "error",
+    "@typescript-eslint/no-unused-vars": "error",
+    "eslint-comments/no-unused-disable": "error",
+    "max-depth": ["error", 2],
+    "max-nested-callbacks": ["error", 2],
+    "max-lines-per-function": ["error", 56],
+    "max-statements": ["error", 22],
+    "max-params": ["error", 3],
+  },
+  overrides: [
+    {
+      files: ["**/*.test.ts", "**/*.dev.ts"],
+      rules: {
+        "max-lines-per-function": "off",
+        "max-statements": "off",
+        "max-nested-callbacks": "off",
+      },
+    },
+  ],
+};
+' > .eslintrc.cjs
+
+# Install TypeScript, ESLint, and Prettier
+echo "$(bold "Step 6"): Installing dev dependencies"
+npm install --save-dev typescript eslint prettier jest ts-jest @types/jest @typescript-eslint/eslint-plugin eslint-plugin-eslint-comments eslint-plugin-simple-import-sort
+
+# Initialize TypeScript and Prettier
+echo "$(bold "Step 7"): Initializing TypeScript"
+npx tsc --init
+
+echo "Step 8: Initializing Prettier"
+npx prettier --write .
+
+
+# Add TypeScript, ESLint, and Prettier configuration to package.json
+echo "$(bold "You are almost done!") You can now add the following scripts section to your package.json:"
+echo '
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "check-format": "prettier --check .",
+    "fix-format": "prettier --write .",
+    "lint": "eslint . --ext .ts",
+    "fix-lint": "eslint . --ext .ts --fix",
+    "fix": "npm run fix-format && npm run fix-lint"
+  },
+'
