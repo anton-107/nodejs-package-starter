@@ -116,6 +116,12 @@ echo "Step 8: Initializing Prettier"
 npx prettier --write .
 
 
+echo "$(bold "Step 8"): Adding .gitignore"
+echo '
+node_modules
+dist
+' > .gitignore
+
 # Add TypeScript, ESLint, and Prettier configuration to package.json
 echo "$(bold "You are almost done!") You can now add the following scripts section to your package.json:"
 echo '
