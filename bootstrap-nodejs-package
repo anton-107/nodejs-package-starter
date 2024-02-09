@@ -118,9 +118,19 @@ npx prettier --write .
 
 echo "$(bold "Step 8"): Adding .gitignore"
 echo '
+.env
 node_modules
 dist
 ' > .gitignore
+
+echo "$(bold "Step 8"): Adding Jest config"
+echo '/** @type {import('ts-jest').JestConfigWithTsJest} */
+module.exports = {
+  preset: "ts-jest",
+  testEnvironment: "node",
+  testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/dist/"],
+};
+' > jest.config.js
 
 # Add TypeScript, ESLint, and Prettier configuration to package.json
 echo "$(bold "You are almost done!") You can now add the following scripts section to your package.json:"
