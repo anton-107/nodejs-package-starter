@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [16]
+        node: [20]
     name: Node ${{ matrix.node }} sample
     steps:
       - uses: actions/checkout@v3
@@ -110,7 +110,7 @@ npm install --save-dev typescript eslint prettier jest ts-jest @types/jest @type
 
 # Initialize TypeScript and Prettier
 echo "$(bold "Step 7"): Initializing TypeScript"
-npx tsc --init
+npx tsc --init --outDir './dist'
 
 echo "Step 8: Initializing Prettier"
 npx prettier --write .
