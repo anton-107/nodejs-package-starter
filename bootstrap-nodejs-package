@@ -114,6 +114,8 @@ npx tsc --init --outDir './dist'
 
 echo "Step 8: Initializing Prettier"
 npx prettier --write .
+echo 'coverage
+dist' > .prettierignore
 
 
 echo "$(bold "Step 8"): Adding .gitignore"
