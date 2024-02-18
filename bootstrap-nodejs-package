@@ -119,10 +119,8 @@ dist' > .prettierignore
 
 
 echo "$(bold "Step 8"): Adding .gitignore"
-echo '
-.env
+echo '.env
 node_modules
-dist
 ' > .gitignore
 
 echo "$(bold "Step 8"): Adding Jest config"
