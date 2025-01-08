@@ -68,45 +68,52 @@ jobs:
 
 echo "$(bold "Step 5"): Writing eslint config"
 echo '
-module.exports = {
-  root: true,
-  parser: "@typescript-eslint/parser",
-  plugins: [
-    "@typescript-eslint",
-    "simple-import-sort",
-    "eslint-plugin-eslint-comments",
-  ],
-  extends: ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
-  ignorePatterns: ["/dist/**/*"],
-  rules: {
-    "simple-import-sort/imports": "error",
-    "simple-import-sort/exports": "error",
-    "no-console": "error",
-    "no-duplicate-imports": "error",
-    "@typescript-eslint/no-unused-vars": "error",
-    "eslint-comments/no-unused-disable": "error",
-    "max-depth": ["error", 2],
-    "max-nested-callbacks": ["error", 2],
-    "max-lines-per-function": ["error", 56],
-    "max-statements": ["error", 22],
-    "max-params": ["error", 3],
+import pluginJs from "@eslint/js";
+import comments from "@eslint-community/eslint-plugin-eslint-comments/configs";
+import simpleImportSort from "eslint-plugin-simple-import-sort";
+import globals from "globals";
+import tseslint from "typescript-eslint";
+
+
+/** @type {import('eslint').Linter.Config[]} */
+export default [
+  {files: ["**/*.{ts,tsx}"]},
+  {files: ["**/*.ts"], languageOptions: {sourceType: "script"}},
+  {languageOptions: { globals: globals.node }},
+  pluginJs.configs.recommended,
+  ...tseslint.configs.recommended,
+  comments.recommended,
+  {
+    rules: {
+      "@eslint-community/eslint-comments/no-unused-disable": "error"
+    }
   },
-  overrides: [
-    {
-      files: ["**/*.test.ts", "**/*.dev.ts"],
-      rules: {
-        "max-lines-per-function": "off",
-        "max-statements": "off",
-        "max-nested-callbacks": "off",
-      },
+  {
+    plugins: {
+      "simple-import-sort": simpleImportSort,
     },
-  ],
-};
-' > .eslintrc.cjs
+    rules: {
+      "simple-import-sort/imports": "error",
+      "simple-import-sort/exports": "error",
+    },
+  },
+  {
+    rules: {
+      "no-console": "error",
+      "no-duplicate-imports": "error",
+      "max-depth": ["error", 2],
+      "max-nested-callbacks": ["error", 2],
+      "max-lines-per-function": ["error", 56],
+      "max-statements": ["error", 22],
+      "max-params": ["error", 3],
+    }
+  }
+];
+' > eslint.config.mjs
 
 # Install TypeScript, ESLint, and Prettier
 echo "$(bold "Step 6"): Installing dev dependencies"
-npm install --save-dev typescript eslint prettier jest ts-jest @types/jest @typescript-eslint/eslint-plugin eslint-plugin-eslint-comments eslint-plugin-simple-import-sort
+npm install --save-dev typescript eslint prettier jest ts-jest @types/jest typescript-eslint @eslint-community/eslint-plugin-eslint-comments @eslint/js globals eslint-plugin-simple-import-sort
 
 # Initialize TypeScript and Prettier
 echo "$(bold "Step 7"): Initializing TypeScript"
@@ -123,7 +130,7 @@ echo '.env
 node_modules
 ' > .gitignore
 
-echo "$(bold "Step 8"): Adding Jest config"
+echo "$(bold "Step 9"): Adding Jest config"
 echo '/** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
   preset: "ts-jest",
@@ -132,17 +139,30 @@ module.exports = {
 };
 ' > jest.config.js
 
-# Add TypeScript, ESLint, and Prettier configuration to package.json
-echo "$(bold "You are almost done!") You can now add the following scripts section to your package.json:"
-echo '
-  "scripts": {
-    "build": "tsc",
-    "test": "jest",
-    "test:coverage": "jest --coverage",
-    "check-format": "prettier --check .",
-    "fix-format": "prettier --write .",
-    "lint": "eslint . --ext .ts",
-    "fix-lint": "eslint . --ext .ts --fix",
-    "fix": "npm run fix-format && npm run fix-lint"
-  },
-'
+# Add useful commands to package.json
+echo "$(bold "Step 10"): Adding scripts to package.json"
+if ! command -v jq >/dev/null 2>&1; then
+    echo "jq is not installed on your system. try installing it to fully automate this bootstrapping"
+    echo "$(bold "You are almost done!") You can now add the following scripts section to your package.json:"
+    echo '
+      "scripts": {
+        "build": "tsc",
+        "test": "jest",
+        "test:coverage": "jest --coverage",
+        "check-format": "prettier --check .",
+        "fix-format": "prettier --write .",
+        "lint": "eslint .",
+        "fix-lint": "eslint . --fix",
+        "fix": "npm run fix-format && npm run fix-lint"
+      },
+    '
+    exit 1
+fi
+jq '.scripts.build = "tsc ."' package.json > temp.json && mv temp.json package.json
+jq '.scripts.test = "jest"' package.json > temp.json && mv temp.json package.json
+jq '.scripts."test:coverage" = "jest --coverage"' package.json > temp.json && mv temp.json package.json
+jq '.scripts."check-format" = "prettier --check ."' package.json > temp.json && mv temp.json package.json
+jq '.scripts."fix-format" = "prettier --write ."' package.json > temp.json && mv temp.json package.json
+jq '.scripts.lint = "eslint ."' package.json > temp.json && mv temp.json package.json
+jq '.scripts."fix-lint" = "eslint . --fix"' package.json > temp.json && mv temp.json package.json
+jq '.scripts.fix = "npm run fix-format && npm run fix-lint"' package.json > temp.json && mv temp.json package.json
