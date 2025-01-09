@@ -38,6 +38,7 @@ git commit -m 'initial commit' --allow-empty
 # Set up npm
 echo "$(bold "Step 3"): Initializing npm"
 npm init -y
+jq '.type = "module"' package.json > temp.json && mv temp.json package.json
 
 echo "$(bold "Step 4"): Setting up GitHub actions"
 mkdir -p .github/workflows
@@ -50,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [20]
+        node: [22]
     name: Node ${{ matrix.node }} sample
     steps:
       - uses: actions/checkout@v3
@@ -78,6 +79,9 @@ import tseslint from "typescript-eslint";
 /** @type {import('eslint').Linter.Config[]} */
 export default [
   {files: ["**/*.{ts,tsx}"]},
+  {
+    ignores: ["coverage/**"],
+  },
   {files: ["**/*.ts"], languageOptions: {sourceType: "script"}},
   {languageOptions: { globals: globals.node }},
   pluginJs.configs.recommended,
@@ -118,6 +122,22 @@ npm install --save-dev typescript eslint prettier jest ts-jest @types/jest types
 # Initialize TypeScript and Prettier
 echo "$(bold "Step 7"): Initializing TypeScript"
 npx tsc --init --outDir './dist'
+echo '{
+  "compilerOptions": {
+    "target": "es2016",
+    "module": "node16",
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "ts-node": {
+    "experimentalSpecifierResolution": "node",
+    "transpileOnly": true,
+    "esm": true
+  }
+}' > tsconfig.json
 
 echo "Step 8: Initializing Prettier"
 npx prettier --write .
@@ -137,7 +157,7 @@ module.exports = {
   testEnvironment: "node",
   testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/dist/"],
 };
-' > jest.config.js
+' > jest.config.cjs
 
 # Add useful commands to package.json
 echo "$(bold "Step 10"): Adding scripts to package.json"

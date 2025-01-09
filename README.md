@@ -15,3 +15,12 @@
 
 ## Usage
 - bootstrap-nodejs-package my-new-package
+
+# Testing locally with docker
+```bash
+# Build a local image
+docker build -t bootstrap-nodejs-package -f Dockerfile.test .
+
+# Run it with an interactive shell:
+docker run -it --rm -v $(pwd)/test-output:/app/test-output -e TEST_PROJECT_NAME=test1 bootstrap-nodejs-package /bin/bash
+```
