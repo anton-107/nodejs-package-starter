@@ -1,0 +1,23 @@
+FROM node:22-alpine
+
+# Install necessary packages for the script
+RUN apk add --no-cache \
+    bash \
+    git \
+    jq
+
+# Set working directory
+WORKDIR /app
+
+# Copy the script to test
+COPY . .
+
+# Make the script executable
+RUN chmod +x ./bootstrap-nodejs-package
+
+# Create a test script
+COPY test.sh /app/test.sh
+RUN chmod +x /app/test.sh
+
+# Set entry point
+ENTRYPOINT ["/app/test.sh"]
